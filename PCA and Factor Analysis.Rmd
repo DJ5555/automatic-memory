@@ -1,0 +1,102 @@
+---
+title: "PCA"
+---
+
+
+
+```{r}
+cc = read.csv("Credit_clients.csv", header=T)
+```
+```{r}
+str(cc)
+```
+W use the log-transformation for LIMIT_BAL, BILL_AMT1 to BILL_AMT6, PAT_AMT1 to PAY_AMT6 
+(log(0) is –Inf, so we add a small value such as 1 to the original data before taking the log). 
+
+```{r}
+cc$LIMIT_BAL=log(cc$LIMIT_BAL)
+cc[,11:22]=log(cc[,11:22]+1)
+```
+Next we use the scale( ) function to scale the log-transformed LIMIT_BAL, BILL_AMT1 to BILL_AMT6 and PAT_AMT1 to PAY_AMT6 (for example, scale(LIMIT_BAL)). 
+
+Then we use the function prcomp( ) to run principal component analysis.
+```{r}
+cc[,2:22]=scale(cc[,2:22])
+str(cc)
+```
+```{r}
+cc.pca1=prcomp(cc[,2:22])
+cc.pca1
+```
+
+We use the plot( ) function to create a scree plot of the principal component variances. 
+```{r}
+plot(cc.pca1,type="l")
+pcadata=as.data.frame(predict(cc.pca1))
+eigen(cov(pcadata))
+```
+As we can see, 4 eigen values are bigger than 1. 
+
+This biplot can be interpreted as follows:
+•	Limit_bal and Age are highly correlated and grouped together
+•	All the PAY_AMT variables are highly correlated and grouped together
+•	All the BILL_AMT variables are highly correlated and grouped together
+•	All the Pay variables and Education are highly correlated and grouped together
+•	There is no relationship between credit limit and bill amount
+•	There is no relationship between payment time and payment amount
+
+
+Next, we will conduct factor analysis, using the R function factanal( ) to run orthogonal factor analysis with 2, 3 and 4 factors.
+
+```{r}
+cc.fa1 = factanal(x=cc,factors=2,score="Bartlett")
+cc.fa2 = factanal(x=cc,factors=3,score="Bartlett")
+cc.fa3 = factanal(x=cc,factors=4,score="Bartlett")
+```
+•	According to the results, the 3 factors model is the most interpretable. 
+•	Compared to the 2-factor model, the 3-factor model successfully interprets the relationship between Bill_Amt and Pay_AMT. 
+•	A 4-factor model seems unnecessary because of its redundancy.
+
+Interpretation:
+
+If the loading value of one variable is more than 0.5, this variable is positively correlated with the factor. 
+On the other hand, if the loading value of one variable is smaller than -0.5, this variable is negatively correlated with the factor. 
+Factor 1 and Factor 3 are highly correlated.
+
+To plot the results of factor analysis, we will need to create a function.
+First we will plot the two-factor model
+```{r}
+biplot.fa =  function (fa,...) {
+  x = fa$scores[,1:2]
+  y = fa$loadings[,1:2]
+  biplot(x,y,...)
+}
+```
+```{r}
+biplot.fa(cc.fa1,cex=c(0.2,1.2))
+```
+Interpretation:
+•	Limit_bal and Age are highly correlated and grouped together
+•	All the PAY_AMT variables are highly correlated and grouped together
+•	All the BILL_AMT variables are highly correlated and grouped together
+•	All the Pay variables and Education are highly correlated and grouped together
+•	There is no relationship between credit limit and bill amount
+•	There is no relationship between payment time and payment amount
+
+The results are similar to the PCA model.
+
+
+Next, we will try the oblimin rotation for oblique EFA. For this we install the package "GPArotation" for the oblimin rotation, and create a 3-factor EFA model using the rotation oblimin.
+
+```{r}
+install.packages("GPArotation")
+```
+```{r}
+library(GPArotation)
+cc.fa4 = factanal(cc,factors = 3,rotation = "oblimin", scores = "Bartlett")
+cc.fa4
+```
+In general, the loading values are same in the 3-factor model without rotation. 
+
+But this rotation method increases the performance a little more because the loading values increase.
+
